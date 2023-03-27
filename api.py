@@ -11,13 +11,13 @@ class PetFriends:
     def __init__(self):
         self.base_url = "https://petfriends.skillfactory.ru/"
 
-    def get_api_key(self, email: str, passwd: str) -> json:
+    def get_api_key(self, email: str, password: str) -> json:
         """Метод делает запрос к API сервера и возвращает статус запроса и результат в формате
         JSON с уникальным ключем пользователя, найденного по указанным email и паролем"""
 
         headers = {
             'email': email,
-            'password': passwd,
+            'password': password,
         }
         res = requests.get(self.base_url+'api/key', headers=headers)
         status = res.status_code
@@ -69,7 +69,7 @@ class PetFriends:
             result = res.json()
         except json.decoder.JSONDecodeError:
             result = res.text
-        # print(result)
+        print(result)
         return status, result
 
     def delete_pet(self, auth_key: json, pet_id: str) -> json:
@@ -88,6 +88,7 @@ class PetFriends:
             result = res.text
         return status, result
 
+
     def update_pet_info(self, auth_key: json, pet_id: str, name: str,
                         animal_type: str, age: int) -> json:
         """Метод отправляет запрос на сервер о обновлении данных питомуа по указанному ID и
@@ -103,6 +104,68 @@ class PetFriends:
         res = requests.put(self.base_url + 'api/pets/' + pet_id, headers=headers, data=data)
         status = res.status_code
         result = ""
+        try:
+            result = res.json()
+        except json.decoder.JSONDecodeError:
+            result = res.text
+        return status, result
+
+
+
+
+    def put_api_pets(self, auth_key, pet_id, name, animal_type, age):
+
+        data = MultipartEncoder(
+            fields={
+                'name': name,
+                'animal_type': animal_type,
+                'age': age,
+            })
+
+        headers = {'auth_key': auth_key['key'], 'Content-type': data.content_type}
+
+        res = requests.put(self.base_url + f'api/pets/{pet_id}', headers=headers, data=data)
+
+        status = res.status_code
+        result = ''
+        try:
+            result = res.json()
+        except json.decoder.JSONDecodeError:
+            result = res.text
+        return status, result
+
+    def add_new_pet_without_photo(self, auth_key: json, name: str, animal_type: str, age: str) -> json:
+        """Функция добавляет информацию о новом питомце без фото и возвращает информацию в формате JSON"""
+
+        headers = {'auth_key': auth_key['key']}
+        data = {
+            'name': name,
+            'animal_type': animal_type,
+            'age': age
+        }
+
+        res = requests.post(self.base_url + '/api/create_pet_simple', headers=headers, data=data)
+        status = res.status_code
+        result = ''
+        try:
+            result = res.json()
+        except json.decoder.JSONDecodeError:
+            result = res.text
+        return status, result
+
+    def set_photo_pet(self, auth_key: json, pet_id: str, pet_photo: str) -> json:
+        """Функция добавляет фото питомца к информации о существующем питомце и возвращает информацию в формате JSON"""
+
+        data = MultipartEncoder(
+            fields={
+                'pet_photo': (pet_photo, open(pet_photo, 'rb'), 'image/jpg')
+            })
+
+        headers = {'auth_key': auth_key['key'], 'Content-Type': data.content_type}
+
+        res = requests.post(self.base_url + '/api/pets/set_photo/' + pet_id, headers=headers, data=data)
+        status = res.status_code
+        result = ''
         try:
             result = res.json()
         except json.decoder.JSONDecodeError:
